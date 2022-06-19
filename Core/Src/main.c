@@ -487,52 +487,7 @@ static void MX_GPIO_Init(void)
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	//xEventGroupSetBitsFromISR(FlagHandle, 1, pdFALSE);
 	//struct datos Dedos;
-
-
-	/*if(buffRx[0] == 200){
-		Dedos.Move_pulgar = buffRx[1];
-		Dedos.Move_indice = buffRx[2];
-		Dedos.Move_corazon = buffRx[3];
-		Dedos.Move_anular = buffRx[4];
-		Dedos.Move_menique = buffRx[5];
-
-	}else if(buffRx[1] == 200){
-		Dedos.Move_pulgar = buffRx[2];
-		Dedos.Move_indice = buffRx[3];
-		Dedos.Move_corazon = buffRx[4];
-		Dedos.Move_anular = buffRx[5];
-		Dedos.Move_menique = buffRx[0];
-
-	}else if(buffRx[2] == 200){
-		Dedos.Move_pulgar = buffRx[3];
-		Dedos.Move_indice = buffRx[4];
-		Dedos.Move_corazon = buffRx[5];
-		Dedos.Move_anular = buffRx[0];
-		Dedos.Move_menique = buffRx[1];
-
-	}else if(buffRx[3] == 200){
-		Dedos.Move_pulgar = buffRx[4];
-		Dedos.Move_indice = buffRx[5];
-		Dedos.Move_corazon = buffRx[0];
-		Dedos.Move_anular = buffRx[1];
-		Dedos.Move_menique = buffRx[2];
-
-	}else if(buffRx[4] == 200){
-		Dedos.Move_pulgar = buffRx[5];
-		Dedos.Move_indice = buffRx[0];
-		Dedos.Move_corazon = buffRx[1];
-		Dedos.Move_anular = buffRx[2];
-		Dedos.Move_menique = buffRx[3];
-
-	}else if(buffRx[5] == 200){
-		Dedos.Move_pulgar = buffRx[0];
-		Dedos.Move_indice = buffRx[1];
-		Dedos.Move_corazon = buffRx[2];
-		Dedos.Move_anular = buffRx[3];
-		Dedos.Move_menique = buffRx[4];
-	}*/
 
 	for(int i = 0; i<6; i++){
 		if(buffRx[i] == 200){
@@ -548,7 +503,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	osMessageQueuePut(QueueHandle, &Dedos, 0, 0);
 
 	HAL_UART_Receive_IT(&huart1, buffRx, 6);
-	//xEventGroupSetBitsFromISR(FlagHandle, 1, pdFALSE);
 }
 
 
@@ -570,8 +524,7 @@ void Presion(void *argument)
   /* Infinite loop */
   for(;;)
   {
-	  //xEventGroupWaitBits(FlagHandle,1,pdFALSE,pdFALSE,portMAX_DELAY);
-	 // osSemaphoreAcquire(BinarySemHandle, osWaitForever);
+
 #ifdef Press_On
 		  HAL_ADC_Start(&hadc1);
 			  status = HAL_ADC_PollForConversion(&hadc1, 1);
@@ -604,10 +557,7 @@ void Presion(void *argument)
 			  osMessageQueuePut(myQueue02Handle, &press, 0, 0);
 #endif //Press_On
 
-			  //osSemaphoreRelease(BinarySemHandle);
 	  osDelay(5);
-
-
 
   }
   /* USER CODE END 5 */
@@ -631,12 +581,12 @@ void MoveServos(void *argument)
   /* Infinite loop */
   for(;;)
   {
-	 //osSemaphoreAcquire(BinarySemHandle, osWaitForever);ç
+
 #if defined(Pulgar) || defined(Indice) || defined(Medio) || defined(Anular) || defined(Menique)
-	  val1 = osMessageQueueGet(QueueHandle, &buff, NULL, 0);
+	  val1 = osMessageQueueGet(QueueHandle, &buff, NULL, osWaitForever);
 #endif //defined(Pulgar) || defined(Indice) || defined(Medio) || defined(Anular) || defined(Menique)
 #ifdef Press_On
-	  val2 = osMessageQueueGet(myQueue02Handle, &pres, NULL, 0);
+	  val2 = osMessageQueueGet(myQueue02Handle, &pres, NULL, osWaitForever);
 #endif //Press_On
 
 	 if((
@@ -668,14 +618,7 @@ void MoveServos(void *argument)
 		 	 	 	 Menique_Mov(&hi2c1, 0x80, buff.Move_menique);
 #endif //Menique
 
-
-		  //xEventGroupClearBits(FlagHandle, 2);
-		  //xEventGroupSetBits(FlagHandle, 2);
-		  //HAL_UART_Receive_IT(&huart1, buffRx, 5);
 	 }
-
-	 //osSemaphoreRelease(BinarySemHandle);
-
 	  osDelay(5);
 
   }
