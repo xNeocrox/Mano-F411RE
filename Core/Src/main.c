@@ -103,7 +103,6 @@ void MoveServos(void *argument);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
 //DEFINE HERE
 //#define Pulgar
 #define Indice
@@ -650,23 +649,23 @@ void MoveServos(void *argument)
 		  ) == osOK){
 
 #ifdef Pulgar
-		 	 	 	 Pulgar(&hi2c1, 0x80, buff.Move_pulgar);
+		 	 	 	 Pulgar_Mov(&hi2c1, 0x80, buff.Move_pulgar);
 #endif //Pulgar
 
 #ifdef Indice
-		 	 	 	 Indice(&hi2c1, 0x80, buff.Move_indice);
+		 	 	 	 Indice_Mov(&hi2c1, 0x80, buff.Move_indice);
 #endif //Indice
 
 #ifdef Medio
-		 	 	 	 Corazon(&hi2c1, 0x80, buff.Move_corazon);
+		 	 	 	 Corazon_Mov(&hi2c1, 0x80, buff.Move_corazon);
 #endif //Medio
 
 #ifdef Anular
-		 	 	 	 Anular(&hi2c1, 0x80, buff.Move_anular);
+		 	 	 	 Anular_Mov(&hi2c1, 0x80, buff.Move_anular);
 #endif //Anular
 
 #ifdef Menique
-		 	 	 	 Menique(&hi2c1, 0x80, buff.Move_menique);
+		 	 	 	 Menique_Mov(&hi2c1, 0x80, buff.Move_menique);
 #endif //Menique
 
 

@@ -34,7 +34,7 @@ void pca9685_init(I2C_HandleTypeDef *hi2c, uint8_t address)
 void pca9685_pwm(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t num, uint16_t on, uint16_t off)
 {
 	uint8_t outputBuffer[5] = {0x06 + 4*num,on,(on >> 8), off, (off >> 8)};
-	HAL_I2C_Master_Transmit(&hi2c, address, outputBuffer, 5, 1);
+	HAL_I2C_Master_Transmit(hi2c, address, outputBuffer, 5, 1);
 }
 
 void pca9685_Degrees2PWM(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t num, uint8_t grados)
@@ -53,31 +53,31 @@ void pca9685_Degrees2PWM(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t num, 
 
 }
 
-void Indice(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados){
+void Indice_Mov(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados){
 	pca9685_Degrees2PWM(hi2c, address, 15, grados);
 	pca9685_Degrees2PWM(hi2c, address, 11, grados);
 	pca9685_Degrees2PWM(hi2c, address, 7, grados);
 }
 
-void Corazon(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados){
+void Corazon_Mov(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados){
 	pca9685_Degrees2PWM(hi2c, address, 14, grados);
 	pca9685_Degrees2PWM(hi2c, address, 10, grados);
 	pca9685_Degrees2PWM(hi2c, address, 6, grados);
 }
 
-void Anular(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados){
+void Anular_Mov(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados){
 	pca9685_Degrees2PWM(hi2c, address, 13, grados);
 	pca9685_Degrees2PWM(hi2c, address, 9, grados);
 	pca9685_Degrees2PWM(hi2c, address, 5, grados);
 }
 
-void Menique(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados){
+void Menique_Mov(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados){
 	pca9685_Degrees2PWM(hi2c, address, 12, grados);
 	pca9685_Degrees2PWM(hi2c, address, 8, grados);
 	pca9685_Degrees2PWM(hi2c, address, 4, grados);
 }
 
-void Pulgar(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados){
+void Pulgar_Mov(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados){
 	uint8_t grados_t;
 	grados_t = ((180-grados)/1.8)+50;
 	pca9685_Degrees2PWM(hi2c, address, 1, grados_t);
