@@ -21,6 +21,9 @@
 #include "main.h"
 #include "cmsis_os.h"
 
+#include "pca9685_module.h"
+#include "app_common_typedef.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -100,17 +103,28 @@ void MoveServos(void *argument);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void pca9685_init(I2C_HandleTypeDef *hi2c, uint8_t address);
-void pca9685_pwm(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t num, uint16_t on, uint16_t off);
-void pca9685_Degrees2PWM(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t num, uint8_t grados);
 
-void Indice(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados);
-void Corazon(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados);
-void Anular(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados);
-void Menique(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados);
-void Pulgar(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados);
+//DEFINE HERE
+//#define Pulgar
+#define Indice
+//#define Medio
+//#define Anular
+//#define Menique
 
+#define Gyroscope
+#define Press_On
+
+#define presionMax  40 //???
+
+
+//GLOBAL VARIABLE HERE
 uint8_t buffRx[6];
+struct datos Dedos;
+
+//END GLOBAL VARIABLES
+
+//DEBUG VARIABLES
+struct presion press;
 //uint8_t presion[5] = {0,0,0,0,0};
 //uint8_t presion_M[5] = {0,0,0,0,0};
 uint8_t oldMove[5] = {180,180,180,180,180};
@@ -120,29 +134,10 @@ uint8_t buffError[1] = {20};
 //uint8_t count = 0;
 //uint8_t testigo = 0;
 
-struct datos
-{
-	uint8_t Move_pulgar;
-	uint8_t Move_indice;
-	uint8_t Move_corazon;
-	uint8_t Move_anular;
-	uint8_t Move_menique;
-};
-
-struct presion{
-	uint8_t Pres_Pulgar;
-	uint8_t Pres_Indice;
-	uint8_t Pres_Corazon;
-	uint8_t Pres_Anular;
-	uint8_t Pres_Menique;
-
-};
-
-#define presionMax  40 //???
-
 //struct datos buff;
-struct datos Dedos;
-struct presion press;
+
+//END DEBUG VARIABLES
+
 /* USER CODE END 0 */
 
 /**
@@ -262,81 +257,6 @@ int main(void)
   /* USER CODE END 3 */
 }
 
-void pca9685_init(I2C_HandleTypeDef *hi2c, uint8_t address)
-{
-	#define PCA9685_MODE1 0x00
-
-	uint8_t initStruct[2];
-	uint8_t prescale = 3;
-	HAL_I2C_Master_Transmit(hi2c, address, PCA9685_MODE1,1 ,1);
-	uint8_t oldmode = 0;
-
-	uint8_t newmode = ((oldmode & 0x7F)|0x10);
-	initStruct[0] = PCA9685_MODE1;
-	initStruct[1] = newmode;
-	HAL_I2C_Master_Transmit(hi2c, address, initStruct, 2, 1);
-	initStruct[1] = prescale;
-	HAL_I2C_Master_Transmit(hi2c, address, initStruct, 2, 1);
-	initStruct[1] = oldmode;
-	HAL_I2C_Master_Transmit(hi2c, address, initStruct, 2, 1);
-	osDelay(5);
-	initStruct[1] = (oldmode|0xA1);
-	HAL_I2C_Master_Transmit(hi2c, address, initStruct, 2, 1);
-}
-
-void pca9685_pwm(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t num, uint16_t on, uint16_t off)
-{
-	uint8_t outputBuffer[5] = {0x06 + 4*num,on,(on >> 8), off, (off >> 8)};
-	HAL_I2C_Master_Transmit(&hi2c1, address, outputBuffer, 5, 1);
-}
-
-void pca9685_Degrees2PWM(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t num, uint8_t grados)
-{
-	uint16_t off;
-	off = (9.45*grados) + 300;
-
-	if(off > 2000){
-		off = 2000;
-	}
-	else if(off < 300){
-		off = 300;
-	}
-
-	pca9685_pwm(hi2c, address, num, 0, off);
-
-}
-
-void Indice(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados){
-	pca9685_Degrees2PWM(hi2c, address, 15, grados);
-	pca9685_Degrees2PWM(hi2c, address, 11, grados);
-	pca9685_Degrees2PWM(hi2c, address, 7, grados);
-}
-
-void Corazon(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados){
-	pca9685_Degrees2PWM(hi2c, address, 14, grados);
-	pca9685_Degrees2PWM(hi2c, address, 10, grados);
-	pca9685_Degrees2PWM(hi2c, address, 6, grados);
-}
-
-void Anular(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados){
-	pca9685_Degrees2PWM(hi2c, address, 13, grados);
-	pca9685_Degrees2PWM(hi2c, address, 9, grados);
-	pca9685_Degrees2PWM(hi2c, address, 5, grados);
-}
-
-void Menique(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados){
-	pca9685_Degrees2PWM(hi2c, address, 12, grados);
-	pca9685_Degrees2PWM(hi2c, address, 8, grados);
-	pca9685_Degrees2PWM(hi2c, address, 4, grados);
-}
-
-void Pulgar(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados){
-	uint8_t grados_t;
-	grados_t = ((180-grados)/1.8)+50;
-	pca9685_Degrees2PWM(hi2c, address, 1, grados_t);
-	pca9685_Degrees2PWM(hi2c, address, 3, grados);
-	pca9685_Degrees2PWM(hi2c, address, 2, grados);
-}
 
 /**
   * @brief System Clock Configuration
@@ -647,18 +567,13 @@ void Presion(void *argument)
   /* USER CODE BEGIN 5 */
 
 	HAL_StatusTypeDef status;
-	//osStatus_t val;
 	//struct presion press;
   /* Infinite loop */
   for(;;)
   {
-
-
-	   //val = osMutexAcquire(Mutex1Handle, osWaitForever);
-	  //if(val == osOK){
 	  //xEventGroupWaitBits(FlagHandle,1,pdFALSE,pdFALSE,portMAX_DELAY);
 	 // osSemaphoreAcquire(BinarySemHandle, osWaitForever);
-
+#ifdef Press_On
 		  HAL_ADC_Start(&hadc1);
 			  status = HAL_ADC_PollForConversion(&hadc1, 1);
 			  if(status == HAL_OK){
@@ -688,20 +603,9 @@ void Presion(void *argument)
 			  HAL_ADC_Stop(&hadc1);
 
 			  osMessageQueuePut(myQueue02Handle, &press, 0, 0);
+#endif //Press_On
 
 			  //osSemaphoreRelease(BinarySemHandle);
-
-	/*	  if(osMessageQueueGet(QueueHandle, &buff, NULL, osWaitForever) == osOK){
-
-			  xEventGroupClearBits(FlagHandle, 2);
-			  xEventGroupSetBits(FlagHandle, 4);
-
-			  //osMutexRelease(Mutex1Handle);
-
-		  }*/
-	  //}
-
-
 	  osDelay(5);
 
 
@@ -728,103 +632,50 @@ void MoveServos(void *argument)
   /* Infinite loop */
   for(;;)
   {
-	 // val = osMutexAcquire(Mutex1Handle, osWaitForever);
-	  //if(val == osOK){
-	 //osSemaphoreAcquire(BinarySemHandle, osWaitForever);
+	 //osSemaphoreAcquire(BinarySemHandle, osWaitForever);ç
+#if defined(Pulgar) || defined(Indice) || defined(Medio) || defined(Anular) || defined(Menique)
 	  val1 = osMessageQueueGet(QueueHandle, &buff, NULL, 0);
+#endif //defined(Pulgar) || defined(Indice) || defined(Medio) || defined(Anular) || defined(Menique)
+#ifdef Press_On
 	  val2 = osMessageQueueGet(myQueue02Handle, &pres, NULL, 0);
+#endif //Press_On
 
-	 if((val1 && val2) == osOK){
+	 if((
+#if defined(Pulgar) || defined(Indice) || defined(Medio) || defined(Anular) || defined(Menique)
+		  val1
+#endif //defined(Pulgar) || defined(Indice) || defined(Medio) || defined(Anular) || defined(Menique)
+#ifdef Press_On
+		  && val2
+#endif //Press_On
+		  ) == osOK){
 
-		 /* if(!(buff.Move_pulgar < oldMove[0] && pres.Pres_Pulgar > presionMax)){
-			pca9685_Degrees2PWM(&hi2c1, 0x80, 3, buff.Move_pulgar);
-			pca9685_Degrees2PWM(&hi2c1, 0x80, 2, buff.Move_pulgar);
-		  }
-		  else{
-			pca9685_Degrees2PWM(&hi2c1, 0x80, 3, oldMove[0]);
-			pca9685_Degrees2PWM(&hi2c1, 0x80, 2, oldMove[0]);
-		  }
+#ifdef Pulgar
+		 	 	 	 Pulgar(&hi2c1, 0x80, buff.Move_pulgar);
+#endif //Pulgar
 
-		  oldMove[0] = buff.Move_pulgar;
+#ifdef Indice
+		 	 	 	 Indice(&hi2c1, 0x80, buff.Move_indice);
+#endif //Indice
 
-		//----------------------------------------------------------------------
+#ifdef Medio
+		 	 	 	 Corazon(&hi2c1, 0x80, buff.Move_corazon);
+#endif //Medio
 
-		  if(pres.Pres_Indice <40 || buff.Move_indice > oldMove[1]){
-			  pca9685_Degrees2PWM(&hi2c1, 0x80, 15, buff.Move_indice);
-			  pca9685_Degrees2PWM(&hi2c1, 0x80, 11, buff.Move_indice);
-			  pca9685_Degrees2PWM(&hi2c1, 0x80, 7, buff.Move_indice);
-		  }
-		  oldMove[1] = buff.Move_indice;
+#ifdef Anular
+		 	 	 	 Anular(&hi2c1, 0x80, buff.Move_anular);
+#endif //Anular
 
-		//-----------------------------------------------------------------------
-		  if(!(buff.Move_corazon < oldMove[2] && pres.Pres_Corazon > presionMax)){
-				pca9685_Degrees2PWM(&hi2c1, 0x80, 14, buff.Move_corazon);
-				pca9685_Degrees2PWM(&hi2c1, 0x80, 10, buff.Move_corazon);
-				pca9685_Degrees2PWM(&hi2c1, 0x80, 6, buff.Move_corazon);
-			  }
-		  else{
-				pca9685_Degrees2PWM(&hi2c1, 0x80, 14, oldMove[2]);
-				pca9685_Degrees2PWM(&hi2c1, 0x80, 10, oldMove[2]);
-				pca9685_Degrees2PWM(&hi2c1, 0x80, 6, oldMove[2]);
-		  }
-		  oldMove[2]= buff.Move_corazon;
-		  //-------------------------------------------------------------------
+#ifdef Menique
+		 	 	 	 Menique(&hi2c1, 0x80, buff.Move_menique);
+#endif //Menique
 
-		  if(!(buff.Move_anular < oldMove[3] && pres.Pres_Anular > presionMax)){
-				pca9685_Degrees2PWM(&hi2c1, 0x80, 13, buff.Move_anular);
-				pca9685_Degrees2PWM(&hi2c1, 0x80, 9, buff.Move_anular);
-				pca9685_Degrees2PWM(&hi2c1, 0x80, 5, buff.Move_anular);
-		  }
-		  else{
-				pca9685_Degrees2PWM(&hi2c1, 0x80, 13, oldMove[3]);
-				pca9685_Degrees2PWM(&hi2c1, 0x80, 9, oldMove[3]);
-				pca9685_Degrees2PWM(&hi2c1, 0x80, 5, oldMove[3]);
-		  }
-
-		  oldMove[3] = buff.Move_anular;
-		  //------------------------------------------------------------------
-
-		  if(!(buff.Move_menique < oldMove[4] && pres.Pres_Menique > presionMax)){
-				pca9685_Degrees2PWM(&hi2c1, 0x80, 12, buff.Move_menique);
-				pca9685_Degrees2PWM(&hi2c1, 0x80, 8, buff.Move_menique);
-				pca9685_Degrees2PWM(&hi2c1, 0x80, 4, buff.Move_menique);
-		  }
-		  else{
-				pca9685_Degrees2PWM(&hi2c1, 0x80, 12, oldMove[4]);
-				pca9685_Degrees2PWM(&hi2c1, 0x80, 8, oldMove[4]);
-				pca9685_Degrees2PWM(&hi2c1, 0x80, 4, oldMove[4]);
-		  }
-
-		  oldMove[4] = buff.Move_menique;*/
 
 		  //xEventGroupClearBits(FlagHandle, 2);
 		  //xEventGroupSetBits(FlagHandle, 2);
 		  //HAL_UART_Receive_IT(&huart1, buffRx, 5);
-		  //osMutexRelease(Mutex1Handle);
-	  //}
-
 	 }
 
 	 //osSemaphoreRelease(BinarySemHandle);
-
-	Pulgar(&hi2c1, 0x80, buff.Move_pulgar);
-	Indice(&hi2c1, 0x80, buff.Move_indice);
-	Corazon(&hi2c1, 0x80, buff.Move_corazon);
-	Anular(&hi2c1, 0x80, buff.Move_anular);
-	Menique(&hi2c1, 0x80, buff.Move_menique);
-
-
-	/*pca9685_Degrees2PWM(&hi2c1, 0x80, 3, buff.Move_pulgar);
-	pca9685_Degrees2PWM(&hi2c1, 0x80, 2, buff.Move_pulgar);
-
-	pca9685_Degrees2PWM(&hi2c1, 0x80, 15, buff.Move_indice);
-	pca9685_Degrees2PWM(&hi2c1, 0x80, 11, buff.Move_indice);
-	pca9685_Degrees2PWM(&hi2c1, 0x80, 7, buff.Move_indice);
-
-	pca9685_Degrees2PWM(&hi2c1, 0x80, 12, buff.Move_menique);
-	pca9685_Degrees2PWM(&hi2c1, 0x80, 8, buff.Move_menique);
-	pca9685_Degrees2PWM(&hi2c1, 0x80, 4, buff.Move_menique);*/
-
 
 	  osDelay(5);
 
