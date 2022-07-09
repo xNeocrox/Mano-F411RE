@@ -81,6 +81,6 @@ void Pulgar_Mov(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados){
 	uint8_t grados_t;
 	grados_t = ((180-grados)/1.8)+50;
 	pca9685_Degrees2PWM(hi2c, address, 1, grados_t);
-	pca9685_Degrees2PWM(hi2c, address, 3, grados);
 	pca9685_Degrees2PWM(hi2c, address, 2, grados);
+	pca9685_Degrees2PWM(hi2c, address, 3, grados);
 }

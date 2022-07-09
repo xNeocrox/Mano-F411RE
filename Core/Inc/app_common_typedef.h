@@ -26,5 +26,9 @@ struct presion{
 
 };
 
+typedef enum{
+	OPEN_HAND,
+	RUNNING_CODE
+}Init_State;
 
 #endif /* INC_APP_COMMON_TYPEDEF_H_ */

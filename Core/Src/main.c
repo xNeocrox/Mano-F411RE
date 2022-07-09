@@ -106,19 +106,22 @@ void MoveServos(void *argument);
 //DEFINE HERE
 //#define Pulgar
 #define Indice
-//#define Medio
-//#define Anular
-//#define Menique
+#define Medio
+#define Anular
+#define Menique
 
-#define Gyroscope
-#define Press_On
+//#define Gyroscope
+//#define Press_On
+#define Run
 
+#define OPEN 180
 #define presionMax  40 //???
 
 
 //GLOBAL VARIABLE HERE
-uint8_t buffRx[6];
+uint8_t buffRx[9];
 struct datos Dedos;
+Init_State Flag_Init = OPEN_HAND;
 
 //END GLOBAL VARIABLES
 
@@ -177,15 +180,6 @@ int main(void)
 
 	pca9685_init(&hi2c1, 0x80);
 
-	pca9685_Degrees2PWM(&hi2c1, 0x80, 0, 180);
-	pca9685_Degrees2PWM(&hi2c1, 0x80, 1, 180);
-
-	pca9685_Degrees2PWM(&hi2c1, 0x80, 2, 180);
-	pca9685_Degrees2PWM(&hi2c1, 0x80, 3, 180);
-	pca9685_Degrees2PWM(&hi2c1, 0x80, 4, 180);
-	//pca9685_Degrees2PWM(&hi2c1, 0x80, 2, 180);
-
-
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -236,7 +230,7 @@ int main(void)
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
 
-  HAL_UART_Receive_IT(&huart1,buffRx,6);
+  HAL_UART_Receive_IT(&huart1,buffRx,9);
 
 
   /* USER CODE END RTOS_EVENTS */
@@ -488,21 +482,26 @@ static void MX_GPIO_Init(void)
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	//struct datos Dedos;
-
-	for(int i = 0; i<6; i++){
-		if(buffRx[i] == 200){
-			Dedos.Move_pulgar = buffRx[(i+1)%6];
-			Dedos.Move_indice = buffRx[(i+2)%6];
-			Dedos.Move_corazon = buffRx[(i+3)%6];
-			Dedos.Move_anular = buffRx[(i+4)%6];
-			Dedos.Move_menique = buffRx[(i+5)%6];
-			break;
+	if(RUNNING_CODE == Flag_Init)
+	{
+		for(int i = 0; i<9; i++)
+		{
+			if(buffRx[i] == 200)
+			{
+				Dedos.Move_pulgar = buffRx[(i+1)%9];
+				Dedos.Move_indice = buffRx[(i+2)%9];
+				Dedos.Move_corazon = buffRx[(i+3)%9];
+				Dedos.Move_anular = buffRx[(i+4)%9];
+				Dedos.Move_menique = buffRx[(i+5)%9];
+				break;
+			}
 		}
+
+		osMessageQueuePut(QueueHandle, &Dedos, 0, 0);
 	}
 
-	osMessageQueuePut(QueueHandle, &Dedos, 0, 0);
 
-	HAL_UART_Receive_IT(&huart1, buffRx, 6);
+	HAL_UART_Receive_IT(&huart1, buffRx, 9);
 }
 
 
@@ -518,8 +517,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 void Presion(void *argument)
 {
   /* USER CODE BEGIN 5 */
-
+#ifdef Press_On
 	HAL_StatusTypeDef status;
+#endif //Press_On
 	//struct presion press;
   /* Infinite loop */
   for(;;)
@@ -573,30 +573,61 @@ void Presion(void *argument)
 void MoveServos(void *argument)
 {
   /* USER CODE BEGIN MoveServos */
+#if defined(Pulgar) || defined(Indice) || defined(Medio) || defined(Anular) || defined(Menique)
 	osStatus_t val1;
-	osStatus_t val2;
-
 	struct datos buff;
+#endif // defined(Pulgar) || defined(Indice) || defined(Medio) || defined(Anular) || defined(Menique)
+#ifdef Press_On
+	osStatus_t val2;
 	struct presion pres;
+#endif // Press_On
   /* Infinite loop */
   for(;;)
   {
+	  switch(Flag_Init)
+	  {
+	  	  case OPEN_HAND:
+#ifdef Pulgar
+	  		Pulgar_Mov(&hi2c1, 0x80, OPEN);
+#endif // Pulgar
+#ifdef Indice
+	  		Indice_Mov(&hi2c1, 0x80, OPEN);
+#endif // Indice
+#ifdef Medio
+	  		Corazon_Mov(&hi2c1, 0x80, OPEN);
+#endif // Medio
+#ifdef Anular
+	  		Anular_Mov(&hi2c1, 0x80, OPEN);
+#endif // Anular
+#ifdef Menique
+	  		Menique_Mov(&hi2c1, 0x80, OPEN);
+#endif // Menique
 
+	  		pca9685_Degrees2PWM(&hi2c1, 0x80, 0, 90);
+
+	  		osDelay(5000);
+#ifdef Run
+	  		Flag_Init = RUNNING_CODE;
+#endif // Run
+	  		  break;
+
+	  	  case RUNNING_CODE:
 #if defined(Pulgar) || defined(Indice) || defined(Medio) || defined(Anular) || defined(Menique)
-	  val1 = osMessageQueueGet(QueueHandle, &buff, NULL, osWaitForever);
+	  		  val1 = osMessageQueueGet(QueueHandle, &buff, NULL, osWaitForever);
 #endif //defined(Pulgar) || defined(Indice) || defined(Medio) || defined(Anular) || defined(Menique)
 #ifdef Press_On
-	  val2 = osMessageQueueGet(myQueue02Handle, &pres, NULL, osWaitForever);
+	  		  val2 = osMessageQueueGet(myQueue02Handle, &pres, NULL, osWaitForever);
 #endif //Press_On
 
-	 if((
+	  		  if((
 #if defined(Pulgar) || defined(Indice) || defined(Medio) || defined(Anular) || defined(Menique)
-		  val1
-#endif //defined(Pulgar) || defined(Indice) || defined(Medio) || defined(Anular) || defined(Menique)
+	  				  val1
+#endif // defined(Pulgar) || defined(Indice) || defined(Medio) || defined(Anular) || defined(Menique)
 #ifdef Press_On
-		  && val2
+					  && val2
 #endif //Press_On
-		  ) == osOK){
+	  		  	  	  	  	  ) == osOK)
+	  		  {
 
 #ifdef Pulgar
 		 	 	 	 Pulgar_Mov(&hi2c1, 0x80, buff.Move_pulgar);
@@ -618,7 +649,11 @@ void MoveServos(void *argument)
 		 	 	 	 Menique_Mov(&hi2c1, 0x80, buff.Move_menique);
 #endif //Menique
 
-	 }
+	  		  }
+	  		  break;
+	  }
+
+
 	  osDelay(5);
 
   }
