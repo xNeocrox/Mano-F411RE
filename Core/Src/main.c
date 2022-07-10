@@ -23,7 +23,6 @@
 
 #include "pca9685_module.h"
 #include "app_common_typedef.h"
-
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -47,6 +46,8 @@
 ADC_HandleTypeDef hadc1;
 
 I2C_HandleTypeDef hi2c1;
+
+TIM_HandleTypeDef htim3;
 
 UART_HandleTypeDef huart1;
 
@@ -94,6 +95,7 @@ static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_ADC1_Init(void);
+static void MX_TIM3_Init(void);
 void Presion(void *argument);
 void MoveServos(void *argument);
 
@@ -104,13 +106,13 @@ void MoveServos(void *argument);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 //DEFINE HERE
-//#define Pulgar
+#define Pulgar
 #define Indice
 #define Medio
 #define Anular
 #define Menique
 
-//#define Gyroscope
+#define Gyroscope
 //#define Press_On
 #define Run
 
@@ -127,10 +129,6 @@ Init_State Flag_Init = OPEN_HAND;
 
 //DEBUG VARIABLES
 struct presion press;
-//uint8_t presion[5] = {0,0,0,0,0};
-//uint8_t presion_M[5] = {0,0,0,0,0};
-uint8_t oldMove[5] = {180,180,180,180,180};
-uint8_t Move[5] = {0,0,0,0,0};
 
 uint8_t buffError[1] = {20};
 //uint8_t count = 0;
@@ -173,12 +171,14 @@ int main(void)
   MX_I2C1_Init();
   MX_USART1_UART_Init();
   MX_ADC1_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
 
   __HAL_UART_ENABLE_IT(&huart1,UART_IT_TC);
   __HAL_UART_ENABLE_IT(&huart1,UART_IT_RXNE);
 
 	pca9685_init(&hi2c1, 0x80);
+	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
 
   /* USER CODE END 2 */
 
@@ -249,7 +249,6 @@ int main(void)
   }
   /* USER CODE END 3 */
 }
-
 
 /**
   * @brief System Clock Configuration
@@ -412,6 +411,65 @@ static void MX_I2C1_Init(void)
 }
 
 /**
+  * @brief TIM3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM3_Init(void)
+{
+
+  /* USER CODE BEGIN TIM3_Init 0 */
+
+  /* USER CODE END TIM3_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  /* USER CODE BEGIN TIM3_Init 1 */
+
+  /* USER CODE END TIM3_Init 1 */
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 84-1;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 20000;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 500;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM3_Init 2 */
+
+  /* USER CODE END TIM3_Init 2 */
+  HAL_TIM_MspPostInit(&htim3);
+
+}
+
+/**
   * @brief USART1 Initialization Function
   * @param None
   * @retval None
@@ -488,11 +546,13 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 		{
 			if(buffRx[i] == 200)
 			{
-				Dedos.Move_pulgar = buffRx[(i+1)%9];
-				Dedos.Move_indice = buffRx[(i+2)%9];
+				Dedos.Move_pulgar  = buffRx[(i+1)%9];
+				Dedos.Move_indice  = buffRx[(i+2)%9];
 				Dedos.Move_corazon = buffRx[(i+3)%9];
-				Dedos.Move_anular = buffRx[(i+4)%9];
+				Dedos.Move_anular  = buffRx[(i+4)%9];
 				Dedos.Move_menique = buffRx[(i+5)%9];
+				Dedos.Move_ejeX    = buffRx[(i+6)%9];
+				Dedos.Move_ejeY    = buffRx[(i+7)%9];
 				break;
 			}
 		}
@@ -519,8 +579,8 @@ void Presion(void *argument)
   /* USER CODE BEGIN 5 */
 #ifdef Press_On
 	HAL_StatusTypeDef status;
-#endif //Press_On
 	//struct presion press;
+#endif //Press_On
   /* Infinite loop */
   for(;;)
   {
@@ -534,12 +594,7 @@ void Presion(void *argument)
 
 			  status = HAL_ADC_PollForConversion(&hadc1, 1);
 			  if(status == HAL_OK){
-				  press.Pres_Indice = HAL_ADC_GetValue(&hadc1);
-			  }
-
-			  status = HAL_ADC_PollForConversion(&hadc1, 1);
-			  if(status == HAL_OK){
-				  press.Pres_Corazon = HAL_ADC_GetValue(&hadc1);
+				  press.Pres_Menique = HAL_ADC_GetValue(&hadc1);
 			  }
 
 			  status = HAL_ADC_PollForConversion(&hadc1, 1);
@@ -549,14 +604,18 @@ void Presion(void *argument)
 
 			  status = HAL_ADC_PollForConversion(&hadc1, 1);
 			  if(status == HAL_OK){
-				  press.Pres_Menique = HAL_ADC_GetValue(&hadc1);
+				  press.Pres_Corazon = HAL_ADC_GetValue(&hadc1);
+			  }
+
+			  status = HAL_ADC_PollForConversion(&hadc1, 1);
+			  if(status == HAL_OK){
+				  press.Pres_Indice = HAL_ADC_GetValue(&hadc1);
 			  }
 
 			  HAL_ADC_Stop(&hadc1);
 
 			  osMessageQueuePut(myQueue02Handle, &press, 0, 0);
 #endif //Press_On
-
 	  osDelay(5);
 
   }
@@ -573,10 +632,10 @@ void Presion(void *argument)
 void MoveServos(void *argument)
 {
   /* USER CODE BEGIN MoveServos */
-#if defined(Pulgar) || defined(Indice) || defined(Medio) || defined(Anular) || defined(Menique)
+#if defined(Pulgar) || defined(Indice) || defined(Medio) || defined(Anular) || defined(Menique) || defined(Gyroscope)
 	osStatus_t val1;
 	struct datos buff;
-#endif // defined(Pulgar) || defined(Indice) || defined(Medio) || defined(Anular) || defined(Menique)
+#endif // defined(Pulgar) || defined(Indice) || defined(Medio) || defined(Anular) || defined(Menique) || defined(Gyroscope)
 #ifdef Press_On
 	osStatus_t val2;
 	struct presion pres;
@@ -602,8 +661,10 @@ void MoveServos(void *argument)
 #ifdef Menique
 	  		Menique_Mov(&hi2c1, 0x80, OPEN);
 #endif // Menique
-
-	  		pca9685_Degrees2PWM(&hi2c1, 0x80, 0, 90);
+#ifdef Gyroscope
+	  		EjeX_Mov(htim3, (OPEN/2));
+	  		EjeY_Mov(&hi2c1, 0x80, (OPEN/2));
+#endif // Gyroscope
 
 	  		osDelay(5000);
 #ifdef Run
@@ -612,9 +673,9 @@ void MoveServos(void *argument)
 	  		  break;
 
 	  	  case RUNNING_CODE:
-#if defined(Pulgar) || defined(Indice) || defined(Medio) || defined(Anular) || defined(Menique)
+#if defined(Pulgar) || defined(Indice) || defined(Medio) || defined(Anular) || defined(Menique) || defined(Gyroscope)
 	  		  val1 = osMessageQueueGet(QueueHandle, &buff, NULL, osWaitForever);
-#endif //defined(Pulgar) || defined(Indice) || defined(Medio) || defined(Anular) || defined(Menique)
+#endif //defined(Pulgar) || defined(Indice) || defined(Medio) || defined(Anular) || defined(Menique) || defined(Gyroscope)
 #ifdef Press_On
 	  		  val2 = osMessageQueueGet(myQueue02Handle, &pres, NULL, osWaitForever);
 #endif //Press_On
@@ -648,7 +709,10 @@ void MoveServos(void *argument)
 #ifdef Menique
 		 	 	 	 Menique_Mov(&hi2c1, 0x80, buff.Move_menique);
 #endif //Menique
-
+#ifdef Gyroscope
+		 	  		EjeX_Mov(htim3, buff.Move_ejeX);
+		 	  		EjeY_Mov(&hi2c1, 0x80, buff.Move_ejeY);
+#endif //Gyroscope
 	  		  }
 	  		  break;
 	  }

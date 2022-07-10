@@ -19,5 +19,7 @@ void Corazon_Mov(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados);
 void Anular_Mov(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados);
 void Menique_Mov(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados);
 void Pulgar_Mov(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados);
+void EjeY_Mov(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados);
+void EjeX_Mov(TIM_HandleTypeDef htim, uint8_t grados);
 
 #endif /* INC_PCA9685_MODULE_H_ */

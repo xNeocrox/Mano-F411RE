@@ -53,34 +53,63 @@ void pca9685_Degrees2PWM(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t num, 
 
 }
 
-void Indice_Mov(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados){
+void Indice_Mov(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados)
+{
 	pca9685_Degrees2PWM(hi2c, address, 15, grados);
 	pca9685_Degrees2PWM(hi2c, address, 11, grados);
 	pca9685_Degrees2PWM(hi2c, address, 7, grados);
 }
 
-void Corazon_Mov(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados){
+void Corazon_Mov(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados)
+{
 	pca9685_Degrees2PWM(hi2c, address, 14, grados);
 	pca9685_Degrees2PWM(hi2c, address, 10, grados);
 	pca9685_Degrees2PWM(hi2c, address, 6, grados);
 }
 
-void Anular_Mov(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados){
+void Anular_Mov(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados)
+{
 	pca9685_Degrees2PWM(hi2c, address, 13, grados);
 	pca9685_Degrees2PWM(hi2c, address, 9, grados);
 	pca9685_Degrees2PWM(hi2c, address, 5, grados);
 }
 
-void Menique_Mov(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados){
+void Menique_Mov(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados)
+{
 	pca9685_Degrees2PWM(hi2c, address, 12, grados);
 	pca9685_Degrees2PWM(hi2c, address, 8, grados);
 	pca9685_Degrees2PWM(hi2c, address, 4, grados);
 }
 
-void Pulgar_Mov(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados){
+void Pulgar_Mov(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados)
+{
 	uint8_t grados_t;
 	grados_t = ((180-grados)/1.8)+50;
 	pca9685_Degrees2PWM(hi2c, address, 1, grados_t);
 	pca9685_Degrees2PWM(hi2c, address, 2, grados);
 	pca9685_Degrees2PWM(hi2c, address, 3, grados);
+}
+
+void EjeY_Mov(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t grados)
+{
+	pca9685_Degrees2PWM(hi2c, address, 0, grados);
+}
+
+void EjeX_Mov(TIM_HandleTypeDef htim, uint8_t grados)
+{
+	uint32_t duty;
+	if(grados >= 180)
+	{
+		duty = 2500;
+	}
+	else if(grados <= 0)
+	{
+		duty = 500;
+	}
+	else
+	{
+		duty = ((2000 / 180)*grados) + 500;
+	}
+
+	htim.Instance->CCR1 = duty;
 }

@@ -15,18 +15,21 @@ struct datos
 	uint8_t Move_corazon;
 	uint8_t Move_anular;
 	uint8_t Move_menique;
+	uint8_t Move_ejeX;
+	uint8_t Move_ejeY;
 };
 
-struct presion{
+struct presion
+{
 	uint8_t Pres_Pulgar;
 	uint8_t Pres_Indice;
 	uint8_t Pres_Corazon;
 	uint8_t Pres_Anular;
 	uint8_t Pres_Menique;
-
 };
 
-typedef enum{
+typedef enum
+{
 	OPEN_HAND,
 	RUNNING_CODE
 }Init_State;
