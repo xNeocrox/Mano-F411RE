@@ -117,7 +117,8 @@ void MoveServos(void *argument);
 #define Run
 
 #define OPEN 180
-#define presionMax  40 //???
+#define PressMaxIndice  55
+#define PressMaxPalma   20
 
 
 //GLOBAL VARIABLE HERE
@@ -635,10 +636,12 @@ void MoveServos(void *argument)
 #if defined(Pulgar) || defined(Indice) || defined(Medio) || defined(Anular) || defined(Menique) || defined(Gyroscope)
 	osStatus_t val1;
 	struct datos buff;
+	struct datos Old_Move;
 #endif // defined(Pulgar) || defined(Indice) || defined(Medio) || defined(Anular) || defined(Menique) || defined(Gyroscope)
 #ifdef Press_On
 	osStatus_t val2;
 	struct presion pres;
+	uint8_t flag[5] = {0,0,0,0,0};
 #endif // Press_On
   /* Infinite loop */
   for(;;)
@@ -691,24 +694,106 @@ void MoveServos(void *argument)
 	  		  	  	  	  	  ) == osOK)
 	  		  {
 
-#ifdef Pulgar
-		 	 	 	 Pulgar_Mov(&hi2c1, 0x80, buff.Move_pulgar);
-#endif //Pulgar
-
 #ifdef Indice
-		 	 	 	 Indice_Mov(&hi2c1, 0x80, buff.Move_indice);
+		 	 	 	 if(PressMaxIndice <= pres.Pres_Indice)
+		 	 	 	{
+		 	 	 		 if(0 == flag[1])
+		 	 	 		 {
+		 	 	 			 Old_Move.Move_indice = buff.Move_indice;
+		 	 	 			 flag[1] = 1;
+		 	 	 		 }
+
+						 if(buff.Move_indice > Old_Move.Move_indice) //opening
+						 {
+							Indice_Mov(&hi2c1, 0x80, buff.Move_indice);
+						 }
+
+		 	 	 	}
+		 	 	 	else
+		 	 	 	{
+						Indice_Mov(&hi2c1, 0x80, buff.Move_indice);
+						flag[1] = 0;
+		 	 	 	}
 #endif //Indice
 
+#ifdef Pulgar
+		 	 	 	 if(PressMaxPalma <= pres.Pres_Pulgar)
+		 	 	 	 {
+		 	 	 		 if(0 == flag[0])
+		 	 	 		 {
+		 	 	 			Old_Move.Move_pulgar= buff.Move_pulgar;
+		 	 	 			flag[0] = 1;
+		 	 	 		 }
+		 	 	 		 if(buff.Move_pulgar > Old_Move.Move_pulgar)
+		 	 	 		 {
+		 	 	 			Pulgar_Mov(&hi2c1, 0x80, buff.Move_pulgar);
+		 	 	 		 }
+		 	 	 	 }
+		 	 	 	 else
+		 	 	 	 {
+		 	 	 		 Pulgar_Mov(&hi2c1, 0x80, buff.Move_pulgar);
+		 	 	 		 flag[0] = 0;
+		 	 	 	 }
+#endif //Pulgar
+
 #ifdef Medio
-		 	 	 	 Corazon_Mov(&hi2c1, 0x80, buff.Move_corazon);
+		 	 	 	 if(PressMaxPalma <= pres.Pres_Pulgar)
+		 	 	 	 {
+		 	 	 		 if(0 == flag[2])
+		 	 	 		 {
+		 	 	 			Old_Move.Move_corazon= buff.Move_corazon;
+		 	 	 			flag[2] = 1;
+		 	 	 		 }
+		 	 	 		 if(buff.Move_corazon > Old_Move.Move_corazon)
+		 	 	 		 {
+		 	 	 			 Corazon_Mov(&hi2c1, 0x80, buff.Move_corazon);
+		 	 	 		 }
+		 	 	 	 }
+		 	 	 	 else
+		 	 	 	 {
+		 	 	 		 Corazon_Mov(&hi2c1, 0x80, buff.Move_corazon);
+		 	 	 		 flag[2] = 0;
+		 	 	 	 }
 #endif //Medio
 
 #ifdef Anular
-		 	 	 	 Anular_Mov(&hi2c1, 0x80, buff.Move_anular);
+		 	 	 	 if(PressMaxPalma <= pres.Pres_Pulgar)
+		 	 	 	 {
+		 	 	 		 if(0 == flag[3])
+		 	 	 		 {
+		 	 	 			Old_Move.Move_anular= buff.Move_anular;
+		 	 	 			flag[3] = 1;
+		 	 	 		 }
+		 	 	 		 if(buff.Move_anular > Old_Move.Move_anular)
+		 	 	 		 {
+		 	 	 			 Anular_Mov(&hi2c1, 0x80, buff.Move_anular);
+		 	 	 		 }
+		 	 	 	 }
+		 	 	 	 else
+		 	 	 	 {
+		 	 	 		 Anular_Mov(&hi2c1, 0x80, buff.Move_anular);
+		 	 	 		 flag[3] = 0;
+		 	 	 	 }
 #endif //Anular
 
 #ifdef Menique
-		 	 	 	 Menique_Mov(&hi2c1, 0x80, buff.Move_menique);
+		 	 	 	 if(PressMaxPalma <= pres.Pres_Pulgar)
+		 	 	 	 {
+		 	 	 		 if(0 == flag[3])
+		 	 	 		 {
+		 	 	 			Old_Move.Move_menique= buff.Move_menique;
+		 	 	 			flag[4] = 1;
+		 	 	 		 }
+		 	 	 		 if(buff.Move_menique > Old_Move.Move_menique)
+		 	 	 		 {
+		 	 	 			 Menique_Mov(&hi2c1, 0x80, buff.Move_menique);
+		 	 	 		 }
+		 	 	 	 }
+		 	 	 	 else
+		 	 	 	 {
+		 	 	 		 Menique_Mov(&hi2c1, 0x80, buff.Move_menique);
+		 	 	 		 flag[4] = 0;
+		 	 	 	 }
 #endif //Menique
 #ifdef Gyroscope
 		 	  		EjeX_Mov(htim3, buff.Move_ejeY);
