@@ -113,7 +113,7 @@ void MoveServos(void *argument);
 #define Menique
 
 #define Gyroscope
-//#define Press_On
+#define Press_On
 #define Run
 
 #define OPEN 180
@@ -664,6 +664,7 @@ void MoveServos(void *argument)
 #ifdef Gyroscope
 	  		EjeX_Mov(htim3, (OPEN/2));
 	  		EjeY_Mov(&hi2c1, 0x80, (OPEN/2));
+
 #endif // Gyroscope
 
 	  		osDelay(5000);
@@ -710,8 +711,8 @@ void MoveServos(void *argument)
 		 	 	 	 Menique_Mov(&hi2c1, 0x80, buff.Move_menique);
 #endif //Menique
 #ifdef Gyroscope
-		 	  		EjeX_Mov(htim3, buff.Move_ejeX);
-		 	  		EjeY_Mov(&hi2c1, 0x80, buff.Move_ejeY);
+		 	  		EjeX_Mov(htim3, buff.Move_ejeY);
+		 	  		EjeY_Mov(&hi2c1, 0x80, buff.Move_ejeX);
 #endif //Gyroscope
 	  		  }
 	  		  break;
