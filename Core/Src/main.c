@@ -117,8 +117,8 @@ void MoveServos(void *argument);
 #define Run
 
 #define OPEN 180
-#define PressMaxIndice  55
-#define PressMaxPalma   20
+#define PressMaxIndice  25
+#define PressMaxPalma   10
 
 
 //GLOBAL VARIABLE HERE
